@@ -1,8 +1,10 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import Stepper from '@/components/Stepper'; // Assuming Stepper is in components folder
-import PropertyScore from '@/components/PropertyScore'; // Assuming PropertyScore is in components folder
+import dynamic from 'next/dynamic';
+import { FiFilter } from 'react-icons/fi';
+import { BiSort } from 'react-icons/bi';
 import { IoChevronDown, IoInformationCircleOutline } from 'react-icons/io5';
+import { useRouter } from 'next/navigation';
 
 // Define interfaces for step data
 interface Step {
@@ -23,6 +25,34 @@ interface PropertyType {
 // Add new interfaces for file handling
 interface FileWithPreview extends File {
     preview?: string;
+}
+
+// Add new interfaces for amenities
+interface AmenitiesFormData {
+    otherRooms: string[];
+    furnishing: string;
+    coveredParking: number;
+    openParking: number;
+    amenities: string[];
+    propertyFeatures: string[];
+    societyFeatures: string[];
+    additionalFeatures: string[];
+    waterSource: string[];
+    overlooking: string[];
+    otherFeatures: {
+        gatedSociety: boolean;
+        cornerProperty: boolean;
+        petFriendly: boolean;
+        wheelchairFriendly: boolean;
+    };
+    powerBackup: string;
+    propertyFacing: string;
+    flooringType: string;
+    roadWidth: {
+        value: string;
+        unit: string;
+    };
+    locationAdvantages: string[];
 }
 
 // Add FormData interface at the top with other interfaces
@@ -54,14 +84,27 @@ interface FormData {
     priceIncludesTaxGovt: boolean;
     priceNegotiable: boolean;
     propertyDescription: string;
+    subLocality: string;
+    amenities: AmenitiesFormData;
 }
 
-const steps: Step[] = [
-    { id: 1, title: 'Basic Details', subtitle: 'Step 1', current: true },
-    { id: 2, title: 'Location Details', subtitle: 'Step 2' },
-    { id: 3, title: 'Property Profile', subtitle: 'Step 3' },
-    { id: 4, title: 'Photos, Videos & Voice-over', subtitle: 'Step 4' },
-    { id: 5, title: 'Amenities section', subtitle: 'Step 5' },
+// Add new interface for stored property
+interface StoredProperty extends FormData {
+    id: string;
+    createdAt: string;
+    images: string[];
+    video?: string;
+    status: 'active' | 'inactive';
+    userId: string;
+}
+
+// Define initial steps
+const initialSteps: Step[] = [
+    { id: 1, title: 'Basic Details', subtitle: 'Step 1', current: true, completed: false },
+    { id: 2, title: 'Location Details', subtitle: 'Step 2', current: false, completed: false },
+    { id: 3, title: 'Property Profile', subtitle: 'Step 3', current: false, completed: false },
+    { id: 4, title: 'Photos, Videos & Voice-over', subtitle: 'Step 4', current: false, completed: false },
+    { id: 5, title: 'Amenities section', subtitle: 'Step 5', current: false, completed: false },
 ];
 
 const propertyTypes: PropertyType[] = [
@@ -104,7 +147,7 @@ const SelectionButtons: React.FC<SelectionButtonProps> = ({ options, selected, o
                     key={option}
                     type="button"
                     onClick={() => onSelect(option)}
-                    className={`px-4 py-2 border rounded-md text-sm transition-colors ${selected === option ? 'bg-blue-100 text-blue-700 border-blue-300 font-medium' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                    className={`px-4 py-2 border rounded-md text-sm transition-colors ${selected === option ? 'bg-blue-100 text-blue-700 border-blue-300 font-medium' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}`}>
                     {option}
                 </button>
             ))}
@@ -118,6 +161,7 @@ const SelectionButtons: React.FC<SelectionButtonProps> = ({ options, selected, o
 
 const PostPropertyNewPage: React.FC = () => {
     const [currentStep, setCurrentStep] = useState(1);
+    const [steps, setSteps] = useState<Step[]>(initialSteps);
     const [completedSteps, setCompletedSteps] = useState<number[]>([]);
     const [formData, setFormData] = useState<FormData>({
         // Step 1
@@ -125,8 +169,8 @@ const PostPropertyNewPage: React.FC = () => {
         residentialType: '',
         lookingTo: 'Sell',
         // Step 2
-        city: '',
-        locality: '',
+        city: 'Surat',
+        locality: 'Bhatar Char Rasta',
         houseNo: '',
         projectSociety: '',
         // Step 3
@@ -150,11 +194,40 @@ const PostPropertyNewPage: React.FC = () => {
         priceIncludesTaxGovt: false,
         priceNegotiable: false,
         propertyDescription: '',
+        subLocality: '',
+        amenities: {
+            otherRooms: [],
+            furnishing: '',
+            coveredParking: 0,
+            openParking: 0,
+            amenities: [],
+            propertyFeatures: [],
+            societyFeatures: [],
+            additionalFeatures: [],
+            waterSource: [],
+            overlooking: [],
+            otherFeatures: {
+                gatedSociety: false,
+                cornerProperty: false,
+                petFriendly: false,
+                wheelchairFriendly: false,
+            },
+            powerBackup: '',
+            propertyFacing: '',
+            flooringType: '',
+            roadWidth: {
+                value: '',
+                unit: 'Feet'
+            },
+            locationAdvantages: []
+        }
     });
     const [propertyScore, setPropertyScore] = useState(0);
     const [selectedPhotos, setSelectedPhotos] = useState<FileWithPreview[]>([]);
     const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
     const [dragActive, setDragActive] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const router = useRouter();
 
     // Add file input refs
     const photoInputRef = React.useRef<HTMLInputElement>(null);
@@ -245,26 +318,52 @@ const PostPropertyNewPage: React.FC = () => {
         }
     }, [formData.expectedPrice, formData.carpetArea]);
 
+    // Function to update steps
+    const updateSteps = (newCurrentStep: number, newCompletedSteps: number[]) => {
+        setSteps(prevSteps =>
+            prevSteps.map(step => ({
+                ...step,
+                current: step.id === newCurrentStep,
+                completed: newCompletedSteps.includes(step.id)
+            }))
+        );
+    };
+
     // Function to go to the next step
     const nextStep = () => {
-        // Mark the current step as completed
+        if (!isCurrentStepValid()) return;
+
+        const newStep = Math.min(currentStep + 1, steps.length);
+        const newCompletedSteps = [...completedSteps];
+        
         if (!completedSteps.includes(currentStep)) {
-            setCompletedSteps([...completedSteps, currentStep]);
+            newCompletedSteps.push(currentStep);
         }
-         // No need to update score here, useEffect handles it
-        setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+
+        setCurrentStep(newStep);
+        setCompletedSteps(newCompletedSteps);
+        updateSteps(newStep, newCompletedSteps);
     };
 
     // Function to go to a specific step
     const goToStep = (step: number) => {
-        if (completedSteps.includes(step) || step <= currentStep) {
+        if (step < 1 || step > steps.length) return;
+        if (step > 1 && !completedSteps.includes(step - 1)) return;
+
             setCurrentStep(step);
-        }
+        updateSteps(step, completedSteps);
     };
 
     // --- Validation Logic --- 
     const isStep1Valid = () => formData.propertyType && formData.lookingTo;
-    const isStep2Valid = () => formData.city && formData.city !== 'Select City' && formData.locality && formData.locality !== 'Select Locality' && formData.houseNo && formData.projectSociety && formData.projectSociety !== 'Select Project/Society/Building';
+    const isStep2Valid = () => {
+        // Basic validation for required fields
+        const hasCity = formData.city && formData.city.trim() !== '';
+        const hasLocality = formData.locality && formData.locality.trim() !== '';
+        
+        // Return true if both required fields are present
+        return hasCity && hasLocality;
+    };
     const isStep3Valid = () => {
         // Add more checks as needed for Step 3
         return formData.bedrooms !== null &&
@@ -277,15 +376,31 @@ const PostPropertyNewPage: React.FC = () => {
                formData.propertyDescription.length >= 50; // Example: require min description length
     };
 
+    // Update the validation logic for step 4
+    const isStep4Valid = () => {
+        // Since photos and videos are optional (marked as "Optional" in UI),
+        // we should always return true to allow proceeding
+        return true;
+    };
+
+    // Update the validation function for step 5
+    const isStep5Valid = () => {
+        // Since all fields are optional in step 5, we can return true
+        // You can add specific validation rules if needed
+        return true;
+    };
+
+    // Update isCurrentStepValid to include step 5
     const isCurrentStepValid = () => {
          switch (currentStep) {
             case 1: return isStep1Valid();
             case 2: return isStep2Valid();
             case 3: return isStep3Valid();
-            // Add cases for steps 4, 5
+            case 4: return isStep4Valid();
+            case 5: return isStep5Valid();
             default: return false;
         }
-    }
+    };
 
     // Handle photo selection
     const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -373,113 +488,267 @@ const PostPropertyNewPage: React.FC = () => {
         };
     }, [selectedPhotos]);
 
+    // Function to convert File to base64
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = error => reject(error);
+        });
+    };
+
+    // Function to store property in localStorage
+    const storeProperty = async () => {
+        // Convert selected photos to base64
+        const imagePromises = selectedPhotos.map(photo => fileToBase64(photo));
+        const images = await Promise.all(imagePromises);
+
+        // Convert video to base64 if exists
+        let videoBase64 = null;
+        if (selectedVideo) {
+            videoBase64 = await fileToBase64(selectedVideo);
+        }
+
+        const propertyData = {
+            ...formData,
+            id: Date.now().toString(),
+            createdAt: new Date().toISOString(),
+            images: images,
+            video: videoBase64 || undefined,
+            status: 'active',
+            userId: 'current-user-id', // Replace with actual user ID when auth is implemented
+            title: `${formData.bedrooms} BHK ${formData.residentialType} in ${formData.locality}`,
+            price: formData.expectedPrice ? parseInt(formData.expectedPrice, 10) : 'on_request',
+            area: parseInt(formData.carpetArea) || 0,
+            areaUnit: formData.carpetAreaUnit || 'sqft',
+            areaSqm: parseInt(formData.carpetArea) || 0,
+            location: `${formData.locality}, ${formData.city}`,
+            bedrooms: parseInt(formData.bedrooms) || 0,
+            bathrooms: parseInt(formData.bathrooms) || 0,
+            propertyType: formData.residentialType || 'Residential',
+            type: formData.propertyType || 'residential',
+            description: formData.propertyDescription || '',
+            builder: 'Owner',
+            postedTime: 'Just now',
+            featured: false,
+            hasRera: false,
+            carpetArea: `${formData.carpetArea} ${formData.carpetAreaUnit}`,
+            status: 'active',
+            contactCount: 0,
+            furnishingStatus: formData.furnishingStatus,
+            availableFor: formData.availableFor,
+            postedBy: 'Owner',
+            amenities: formData.amenities,
+            locality: formData.locality,
+            projectSociety: formData.projectSociety,
+            propertyAge: formData.propertyAge,
+            availableFrom: formData.availableFrom,
+            highlights: formData.highlights,
+            hasPhotos: images.length > 0,
+            hasVideos: !!videoBase64,
+            verified: false,
+            lookingTo: formData.lookingTo
+        };
+
+        // Save property using the service
+        return saveProperty(propertyData);
+    };
+
+    // Update handleSubmit function
+    const handleSubmit = async () => {
+        setIsSubmitting(true);
+        try {
+            const property = await storeProperty();
+            
+            // Show success message
+            alert('Property posted successfully!');
+            
+            // Redirect based on property type
+            if (formData.lookingTo === 'Rent') {
+                router.push('/rent');
+            } else {
+                router.push('/buy');
+            }
+        } catch (error) {
+            console.error('Error submitting property:', error);
+            alert('Failed to post property. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     // Function to render the content for the current step
     const renderStepContent = () => {
+        const renderContinueButton = () => (
+            <div className="flex justify-end mt-6">
+                <button
+                    type="button"
+                    onClick={nextStep}
+                    className="bg-[#2B3B57] hover:bg-[#1F2937] text-white font-semibold py-3 px-8 rounded-md transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!isCurrentStepValid()}
+                >
+                    {currentStep === steps.length ? 'Finish' : 'Post & continue'}
+                </button>
+            </div>
+        );
+
         switch (currentStep) {
             case 1:
                 return (
                     <div className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Select Property Type</label>
-                            <div className="grid grid-cols-2 gap-4">
-                                {propertyTypes.map((type) => (
-                                    <button
-                                        key={type.id}
-                                        type="button"
-                                        onClick={() => handleSelection('propertyType', type.id)}
-                                        className={`p-4 border rounded-lg text-center transition-colors ${formData.propertyType === type.id ? 'border-blue-600 bg-blue-50 text-blue-700 font-semibold' : 'border-gray-300 hover:border-gray-400'}`}>
-                                        {type.label}
-                                    </button>
-                                ))}
-                            </div>
+                        <div className="mb-8">
+                            <h1 className="text-2xl font-semibold text-[#2B3B57]">Welcome back MEET MANGUKIYA,</h1>
+                            <p className="text-gray-600">Fill out basic details</p>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Looking For</label>
-                            <div className="grid grid-cols-2 gap-4">
-                                {['Rent', 'Sell'].map((option) => (
+
+                        {/* Looking To Section */}
+                        <div className="mb-8">
+                            <h2 className="text-lg font-medium text-[#2B3B57] mb-4">I'm looking to</h2>
+                            <div className="flex flex-wrap gap-4">
+                                {['Sell', 'Rent / Lease', 'PG'].map((option) => (
                                     <button
                                         key={option}
-                                        type="button"
                                         onClick={() => handleSelection('lookingTo', option)}
-                                        className={`p-4 border rounded-lg text-center transition-colors ${formData.lookingTo === option ? 'border-blue-600 bg-blue-50 text-blue-700 font-semibold' : 'border-gray-300 hover:border-gray-400'}`}>
+                                        className={`px-6 py-2 rounded-md text-sm font-medium transition-colors
+                                            ${formData.lookingTo === option 
+                                                ? 'bg-[#5EBEA3]/10 text-[#5EBEA3] border border-[#5EBEA3]/20' 
+                                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                            }`}
+                                    >
                                         {option}
                                     </button>
                                 ))}
                             </div>
                         </div>
+
+                        {/* Property Type Section */}
+                        <div className="mb-8">
+                            <h2 className="text-lg font-medium text-[#2B3B57] mb-4">What kind of property do you have?</h2>
+                            <div className="flex flex-wrap gap-4 mb-6">
+                                {propertyTypes.map((type) => (
+                                    <button
+                                        key={type.id}
+                                        onClick={() => handleSelection('propertyType', type.id)}
+                                        className={`px-6 py-2 rounded-md text-sm font-medium transition-colors
+                                            ${formData.propertyType === type.id 
+                                                ? 'bg-[#5EBEA3]/10 text-[#5EBEA3] border border-[#5EBEA3]/20' 
+                                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        {type.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Residential Types Grid */}
+                            {formData.propertyType === 'residential' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {residentialTypes.map((type) => (
+                                    <button
+                                            key={type.id}
+                                            onClick={() => handleSelection('residentialType', type.id)}
+                                            className={`p-4 text-left rounded-lg transition-colors
+                                                ${formData.residentialType === type.id 
+                                                    ? 'bg-[#5EBEA3]/10 text-[#5EBEA3] border border-[#5EBEA3]/20' 
+                                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            {type.label}
+                                    </button>
+                                ))}
+                            </div>
+                            )}
+                        </div>
+
+                        {renderContinueButton()}
                     </div>
                 );
-            case 2: // Location Details
+            case 2:
                 return (
                     <div className="space-y-6">
-                        <h3 className="text-lg font-semibold text-gray-900">Where is your property located?</h3>
-                        <p className="text-sm text-gray-600">An accurate location helps you connect with the right buyers</p>
-                        {/* City Dropdown */}
+                        <div className="flex items-center mb-2">
+                            <button onClick={() => goToStep(1)} className="text-gray-600 hover:text-gray-800 flex items-center">
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                Back
+                            </button>
+                        </div>
+
+                        <h3 className="text-2xl font-semibold text-[#2B3B57]">Where is your property located?</h3>
+                        <p className="text-gray-600">An accurate location helps you connect with the right buyers</p>
+
+                        {/* City Input */}
                         <div className="relative">
-                            <label htmlFor="city" className="block text-xs font-medium text-gray-500 absolute -top-2 left-2 bg-white px-1">City</label>
-                            <select
-                                id="city"
+                            <label className="block text-sm text-gray-600 mb-1">City</label>
+                            <input
+                                type="text"
                                 name="city"
                                 value={formData.city}
                                 onChange={handleInputChange}
-                                className="appearance-none w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
-                            >
-                                {cities.map(city => (
-                                    <option key={city} value={city} disabled={city === 'Select City'}>{city}</option>
-                                ))}
-                            </select>
-                             <IoChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                                className="w-full p-3 border border-gray-300 rounded-md"
+                            />
                         </div>
-                         {/* Locality Dropdown */}
+
+                        {/* Locality Input */}
                         <div className="relative">
-                             <label htmlFor="locality" className="block text-xs font-medium text-gray-500 absolute -top-2 left-2 bg-white px-1">Locality</label>
-                            <select
-                                id="locality"
+                            <label className="block text-sm text-gray-600 mb-1">Locality</label>
+                            <input
+                                type="text"
                                 name="locality"
                                 value={formData.locality}
                                 onChange={handleInputChange}
-                                className="appearance-none w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
-                            >
-                                {localities.map(locality => (
-                                    <option key={locality} value={locality} disabled={locality === 'Select Locality'}>{locality}</option>
-                                ))}
-                            </select>
-                             <IoChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
-                        </div>
-                        {/* House No Input */}
-                        <div className="relative mt-2">
-                             <label htmlFor="houseNo" className="block text-xs font-medium text-gray-500 absolute -top-2 left-2 bg-white px-1">Apartment / Society</label>
-                             <input
-                                type="text"
-                                id="houseNo" // Keep ID for label association
-                                name="houseNo"
-                                value={formData.houseNo}
-                                onChange={handleInputChange}
-                                // placeholder="Enter Flat no / House no / Villa no" // Use label instead
-                                className="w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                                className="w-full p-3 border border-gray-300 rounded-md"
                             />
                         </div>
-                         {/* Project/Society Dropdown - Renamed ID/Name */} 
-                         <div className="relative">
-                             <label htmlFor="projectSociety" className="block text-xs font-medium text-gray-500 absolute -top-2 left-2 bg-white px-1">House No. (Optional)</label>
+
+                        {/* Sub Locality Input */}
+                        <div className="relative">
+                            <label className="block text-sm text-gray-600 mb-1">Sub Locality (Optional)</label>
                              <input
                                 type="text"
-                                id="projectSociety" // Using this field for House No now as per image
+                                name="subLocality"
+                                value={formData.subLocality}
+                                onChange={handleInputChange}
+                                className="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="Enter sub locality"
+                            />
+                        </div>
+
+                        {/* Apartment/Society Input */}
+                         <div className="relative">
+                            <label className="block text-sm text-gray-600 mb-1">Apartment / Society (Optional)</label>
+                             <input
+                                type="text"
                                 name="projectSociety"
                                 value={formData.projectSociety}
                                 onChange={handleInputChange}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                                className="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="Enter apartment or society name"
                              />
                          </div>
-                         {/* Placeholder for Map Integration */}
-                        <div className="h-40 bg-gray-100 rounded-md flex items-center justify-center text-gray-500">
-                             Map Preview (Placeholder)
+
+                        {/* Location Info Box */}
+                        <div className="bg-blue-50 p-4 rounded-lg flex items-start space-x-3">
+                            <div className="flex-shrink-0">
+                                <img src="/location-icon.png" alt="Location" className="w-24 h-24" />
                          </div>
+                            <div>
+                                <h4 className="font-semibold text-[#2B3B57] mb-2">Why we need an accurate location?</h4>
+                                <p className="text-gray-600">
+                                    Location is the most important for Buyer's. By capturing a detailed location 
+                                    we ensure we get you geniune enquiries.
+                                </p>
+                            </div>
+                        </div>
+
+                        {renderContinueButton()}
                     </div>
                 );
-            case 3: // Property Profile
+            case 3:
                 return (
-                    <div className="space-y-8"> {/* Increased spacing */}
+                    <div className="space-y-8">
                         <h3 className="text-xl font-semibold text-gray-900">Tell us about your property</h3>
 
                         {/* Apartment Type */} 
@@ -703,9 +972,11 @@ const PostPropertyNewPage: React.FC = () => {
                             />
                             <p className="text-xs text-gray-500 text-right">Minimum 50 characters required ({formData.propertyDescription.length}/5000)</p>
                          </div>
+
+                        {renderContinueButton()}
                     </div>
                 );
-            case 4: // Photos, Videos & Voice-over
+            case 4:
                 return (
                     <div className="space-y-8">
                         {/* Video Upload Section */}
@@ -895,41 +1166,298 @@ const PostPropertyNewPage: React.FC = () => {
                                 <p>Without photos your ad will be ignored by buyers</p>
                             </div>
                         </div>
+
+                        {renderContinueButton()}
                     </div>
                 );
             case 5:
-                return <div>Step 5: Amenities Content</div>;
+                return (
+                    <div className="space-y-8">
+                        <h3 className="text-2xl font-semibold text-[#2B3B57]">Add amenities/unique features</h3>
+                        <p className="text-gray-600">These fields are used to populate USP & captions</p>
+                        <p className="text-gray-600">All fields on this page are optional</p>
+
+                        {/* Other Rooms */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Other rooms <span className="text-gray-500">(Optional)</span></h4>
+                            <div className="flex flex-wrap gap-3">
+                                {['Pooja Room', 'Study Room', 'Servant Room', 'Store Room'].map(room => (
+                                    <button key={room} className="px-4 py-2 rounded-md text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                                        + {room}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Furnishing */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Furnishing <span className="text-gray-500">(Optional)</span></h4>
+                            <div className="flex flex-wrap gap-3">
+                                {['Furnished', 'Semi-furnished', 'Un-furnished'].map(type => (
+                                    <button key={type} className="px-4 py-2 rounded-md text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Reserved Parking */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Reserved Parking <span className="text-gray-500">(Optional)</span></h4>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-2">Covered Parking</label>
+                                    <div className="flex items-center gap-2">
+                                        <button className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-md">-</button>
+                                        <span className="w-12 text-center">0</span>
+                                        <button className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-md">+</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-2">Open Parking</label>
+                                    <div className="flex items-center gap-2">
+                                        <button className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-md">-</button>
+                                        <span className="w-12 text-center">0</span>
+                                        <button className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-md">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Property Features */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Property Features</h4>
+                            <div className="flex flex-wrap gap-3">
+                                {[
+                                    'High Ceiling Height',
+                                    'False Ceiling Lighting',
+                                    'Internet/wi-fi connectivity',
+                                    'Centrally Air Conditioned'
+                                ].map(feature => (
+                                    <button key={feature} className="px-4 py-2 rounded-md text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                                        + {feature}
+                                    </button>
+                                ))}
+                                <button className="text-blue-600 hover:underline text-sm">7 more</button>
+                            </div>
+                        </div>
+
+                        {/* Society/Building Features */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Society/Building feature</h4>
+                            <div className="flex flex-wrap gap-3">
+                                {[
+                                    'Fitness Centre / GYM',
+                                    'Swimming Pool',
+                                    'Club house / Community Center',
+                                    'Security Personnel'
+                                ].map(feature => (
+                                    <button key={feature} className="px-4 py-2 rounded-md text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                                        + {feature}
+                                    </button>
+                                ))}
+                                <button className="text-blue-600 hover:underline text-sm">1 more</button>
+                            </div>
+                        </div>
+
+                        {/* Additional Features */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Additional Features</h4>
+                            <div className="flex flex-wrap gap-3">
+                                {[
+                                    'Separate entry for servant room',
+                                    'No open drainage around',
+                                    'Bank Attached Property',
+                                    'Low Density Society'
+                                ].map(feature => (
+                                    <button key={feature} className="px-4 py-2 rounded-md text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                                        + {feature}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Water Source */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Water Source</h4>
+                            <div className="flex flex-wrap gap-3">
+                                {['Municipal corporation', 'Borewell/Tank', '24*7 Water'].map(source => (
+                                    <button key={source} className="px-4 py-2 rounded-md text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                                        + {source}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Overlooking */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Overlooking</h4>
+                            <div className="flex flex-wrap gap-3">
+                                {['Pool', 'Park/Garden', 'Club', 'Main Road'].map(view => (
+                                    <button key={view} className="px-4 py-2 rounded-md text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                                        + {view}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Other Features */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Other Features</h4>
+                            <div className="space-y-3">
+                                {[
+                                    { key: 'gatedSociety', label: 'In a gated society' },
+                                    { key: 'cornerProperty', label: 'Corner Property' },
+                                    { key: 'petFriendly', label: 'Pet Friendly' },
+                                    { key: 'wheelchairFriendly', label: 'Wheelchair friendly' }
+                                ].map(({ key, label }) => (
+                                    <label key={key} className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-gray-300 text-[#5EBEA3] focus:ring-[#5EBEA3]"
+                                        />
+                                        <span className="text-gray-700">{label}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Power Backup */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Power Back up</h4>
+                            <div className="flex gap-3">
+                                {['None', 'Partial', 'Full'].map(type => (
+                                    <button key={type} className="px-4 py-2 rounded-md text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Property Facing */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Property facing</h4>
+                            <div className="flex flex-wrap gap-3">
+                                {[
+                                    'North', 'South', 'East', 'West',
+                                    'North-East', 'North-West', 'South-East', 'South-West'
+                                ].map(direction => (
+                                    <button key={direction} className="px-4 py-2 rounded-md text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                                        {direction}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Type of Flooring */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Type of flooring</h4>
+                            <select className="w-full p-3 border border-gray-300 rounded-md">
+                                <option value="">Select</option>
+                                <option value="marble">Marble</option>
+                                <option value="wooden">Wooden</option>
+                                <option value="ceramic">Ceramic</option>
+                                <option value="granite">Granite</option>
+                                <option value="vitrified">Vitrified</option>
+                            </select>
+                        </div>
+
+                        {/* Width of Road */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Width of Road</h4>
+                            <div className="flex gap-4">
+                                <input
+                                    type="text"
+                                    placeholder="Enter the width"
+                                    className="flex-1 p-3 border border-gray-300 rounded-md"
+                                />
+                                <select className="w-32 p-3 border border-gray-300 rounded-md">
+                                    <option value="Feet">Feet</option>
+                                    <option value="Meter">Meter</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Location Advantages */}
+                        <div className="space-y-4">
+                            <h4 className="text-lg font-medium">Location Advantages</h4>
+                            <p className="text-sm text-gray-600">Highlight the nearby landmarks*</p>
+                            <div className="flex flex-wrap gap-3">
+                                {[
+                                    'Close to Metro Station',
+                                    'Close to School',
+                                    'Close to Hospital',
+                                    'Close to Market',
+                                    'Close to Railway Station'
+                                ].map(advantage => (
+                                    <button key={advantage} className="px-4 py-2 rounded-md text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+                                        + {advantage}
+                                    </button>
+                                ))}
+                            </div>
+                            <button className="text-blue-600 hover:underline text-sm">Show more</button>
+                            <p className="text-xs text-gray-500">*Please provide correct information, otherwise your listing might get blocked</p>
+                        </div>
+
+                        {/* Save and Submit Button */}
+                        <div className="flex justify-end mt-8">
+                            <button
+                                onClick={handleSubmit}
+                                disabled={isSubmitting}
+                                className={`bg-[#0066FF] hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-md transition-colors ${
+                                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                            >
+                                {isSubmitting ? 'Saving...' : 'Save and Submit'}
+                            </button>
+                        </div>
+                    </div>
+                );
             default:
                 return null;
         }
     };
 
+    // Function to render step indicator
+    const renderStepIndicator = (step: Step, index: number) => {
+        return (
+            <div 
+                key={step.id}
+                className={`flex items-center ${index < steps.length - 1 ? 'flex-1' : ''}`}
+            >
+                <div 
+                    className="flex items-center cursor-pointer"
+                    onClick={() => completedSteps.includes(step.id) ? goToStep(step.id) : null}
+                >
+                    <div className={`
+                        w-8 h-8 rounded-full flex items-center justify-center
+                        ${step.current ? 'bg-[#2B3B57] text-white' : 
+                          step.completed ? 'bg-[#5EBEA3] text-white' : 
+                          'bg-gray-200 text-gray-600'}
+                    `}>
+                        {step.completed ? '✓' : step.id}
+                    </div>
+                    <div className="ml-3 hidden md:block">
+                        <p className="text-sm font-medium text-[#2B3B57]">{step.title}</p>
+                        <p className="text-xs text-gray-500">{step.subtitle}</p>
+                    </div>
+                </div>
+                {index < steps.length - 1 && (
+                    <div className={`flex-1 h-0.5 mx-4 ${
+                        step.completed ? 'bg-[#5EBEA3]' : 'bg-gray-200'
+                    }`}></div>
+                )}
+            </div>
+        );
+    };
+
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-3xl mx-auto">
+        <div className="min-h-screen bg-gray-50 py-4 md:py-8">
+            <div className="max-w-3xl mx-auto px-4">
                 {/* Progress Steps */}
-                <div className="mb-8">
-                    <div className="flex items-center space-x-4">
-                        {steps.map((step, index) => (
-                            <React.Fragment key={step.id}>
-                                <div className="flex items-center">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        step.current ? 'bg-[#2B3B57] text-white' : 
-                                        step.completed ? 'bg-[#5EBEA3] text-white' : 
-                                        'bg-gray-200 text-gray-600'
-                                    }`}>
-                                        {step.completed ? '✓' : step.id}
-                                    </div>
-                                    <div className="ml-3">
-                                        <p className="text-sm font-medium text-[#2B3B57]">{step.title}</p>
-                                        <p className="text-xs text-gray-500">{step.subtitle}</p>
-                                    </div>
-                                </div>
-                                {index < steps.length - 1 && (
-                                    <div className="flex-1 h-0.5 bg-gray-200"></div>
-                                )}
-                            </React.Fragment>
-                        ))}
+                <div className="mb-8 overflow-x-auto">
+                    <div className="flex items-center min-w-max md:min-w-0">
+                        {steps.map((step, index) => renderStepIndicator(step, index))}
                     </div>
                 </div>
 
@@ -937,9 +1465,37 @@ const PostPropertyNewPage: React.FC = () => {
                 <div className="mb-8 bg-white p-4 rounded-lg shadow-sm">
                     <div className="flex items-center">
                         <div className="relative w-16 h-16">
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-lg font-semibold text-[#2B3B57]">0%</span>
-                            </div>
+                            <svg className="w-full h-full" viewBox="0 0 100 100">
+                                <circle
+                                    className="text-gray-200 stroke-current"
+                                    strokeWidth="10"
+                                    cx="50"
+                                    cy="50"
+                                    r="40"
+                                    fill="transparent"
+                                ></circle>
+                                <circle
+                                    className="text-[#5EBEA3] stroke-current transition-all duration-500 ease-in-out"
+                                    strokeWidth="10"
+                                    strokeLinecap="round"
+                                    cx="50"
+                                    cy="50"
+                                    r="40"
+                                    fill="transparent"
+                                    strokeDasharray={251.2}
+                                    strokeDashoffset={251.2 - (propertyScore / 100) * 251.2}
+                                    transform="rotate(-90 50 50)"
+                                ></circle>
+                                <text
+                                    x="50"
+                                    y="50"
+                                    className="text-lg font-semibold fill-current text-[#2B3B57]"
+                                    dominantBaseline="central"
+                                    textAnchor="middle"
+                                >
+                                    {`${Math.round(propertyScore)}%`}
+                                </text>
+                            </svg>
                         </div>
                         <div className="ml-4">
                             <h3 className="text-sm font-medium text-[#2B3B57]">Property Score</h3>
@@ -949,91 +1505,8 @@ const PostPropertyNewPage: React.FC = () => {
                 </div>
 
                 {/* Form Content */}
-                <div className="bg-white p-6 rounded-lg shadow-sm">
-                    <div className="mb-8">
-                        <h1 className="text-2xl font-semibold text-[#2B3B57]">Welcome back MEET MANGUKIYA,</h1>
-                        <p className="text-gray-600">Fill out basic details</p>
-                    </div>
-
-                    {/* Looking To Section */}
-                    <div className="mb-8">
-                        <h2 className="text-lg font-medium text-[#2B3B57] mb-4">I'm looking to</h2>
-                        <div className="flex space-x-4">
-                            {['Sell', 'Rent / Lease', 'PG'].map((option) => (
-                                <button
-                                    key={option}
-                                    onClick={() => handleSelection('lookingTo', option)}
-                                    className={`px-6 py-2 rounded-md text-sm font-medium transition-colors
-                                        ${formData.lookingTo === option 
-                                            ? 'bg-[#5EBEA3]/10 text-[#5EBEA3] border border-[#5EBEA3]/20' 
-                                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                                        }`}
-                                >
-                                    {option}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Property Type Section */}
-                    <div className="mb-8">
-                        <h2 className="text-lg font-medium text-[#2B3B57] mb-4">What kind of property do you have?</h2>
-                        <div className="flex space-x-4 mb-6">
-                            {propertyTypes.map((type) => (
-                                <button
-                                    key={type.id}
-                                    onClick={() => handleSelection('propertyType', type.id)}
-                                    className={`px-6 py-2 rounded-md text-sm font-medium transition-colors
-                                        ${formData.propertyType === type.id 
-                                            ? 'bg-[#5EBEA3]/10 text-[#5EBEA3] border border-[#5EBEA3]/20' 
-                                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                                        }`}
-                                >
-                                    {type.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Residential Types Grid */}
-                        {formData.propertyType === 'residential' && (
-                            <div className="grid grid-cols-2 gap-4">
-                                {residentialTypes.map((type) => (
-                                    <button
-                                        key={type.id}
-                                        onClick={() => handleSelection('residentialType', type.id)}
-                                        className={`p-4 text-left rounded-lg transition-colors
-                                            ${formData.residentialType === type.id 
-                                                ? 'bg-[#5EBEA3]/10 text-[#5EBEA3] border border-[#5EBEA3]/20' 
-                                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                                            }`}
-                                    >
-                                        {type.label}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Continue Button */}
-                    <div className="flex justify-end">
-                        <button
-                            type="button"
-                            onClick={nextStep}
-                            className="bg-[#2B3B57] hover:bg-[#1F2937] text-white font-semibold py-3 px-8 rounded-md transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={!isCurrentStepValid()}
-                        >
-                            Post & continue
-                        </button>
-                    </div>
-
-                    {currentStep === steps.length && (
-                        <button
-                            type="button"
-                            className="bg-[#5EBEA3] hover:bg-[#4ea892] text-white font-semibold py-3 px-8 rounded-md transition duration-150 ease-in-out"
-                        >
-                            Finish Posting
-                        </button>
-                    )}
+                <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+                    {renderStepContent()}
                 </div>
 
                 {/* Help Section */}

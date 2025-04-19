@@ -8,6 +8,14 @@ const nextConfig = {
     });
     return config;
   },
+  images: {
+    domains: [
+      'images.unsplash.com',
+      'github.com',
+      'localhost',
+      'propyto.com' // Add your production domain when you have one
+    ],
+  },
 };
 
 module.exports = nextConfig; 

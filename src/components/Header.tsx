@@ -8,6 +8,7 @@ import Button from "./Button";
 import LoginPopup from "./LoginPopup";    
 import PostPropertyStartPopup from './PostProperty';
 import toast from 'react-hot-toast';
+import { useRouter } from "next/navigation";
 
 const navItems = [
   {
@@ -235,9 +236,10 @@ const bottomNavItems = [
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(false);
-  const [isPostStartPopupOpen, setIsPostStartPopupOpen] = useState(false);
+  const [isPostPropertyStartPopupOpen, setIsPostPropertyStartPopupOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     setIsLoadingAuth(true);
@@ -322,9 +324,12 @@ const Header = () => {
             {/* Right Section */}
             <div className="flex items-center gap-4">
               <button 
-                onClick={() => setIsPostStartPopupOpen(true)}
-                className="px-4 py-2 bg-gradient-to-r from-[#bc9b54] to-[#c69531] text-white rounded-md font-medium hover:from-[#c69531] hover:to-[#bc9b54] transition-all duration-300"
+                onClick={() => isLoggedIn ? router.push('/post-property/new') : setIsLoginPopupOpen(true)}
+                className="px-6 py-3 bg-gradient-to-r from-[#bc9b54] to-[#c69531] text-white rounded-lg font-semibold hover:from-[#c69531] hover:to-[#bc9b54] transition-all duration-300 flex items-center gap-2 shadow-md"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
                 Post Property
               </button>
               {!isLoadingAuth && (
@@ -616,17 +621,17 @@ const Header = () => {
         </div>
       </header>
 
-      {isPostStartPopupOpen && (
+      {isPostPropertyStartPopupOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="min-h-screen px-4 text-center">
             <div
               className="fixed inset-0 bg-black bg-opacity-75 transition-opacity"
-              onClick={() => setIsPostStartPopupOpen(false)}
+              onClick={() => setIsPostPropertyStartPopupOpen(false)}
             />
             
             <div className="inline-block w-full max-w-7xl my-8 text-left align-middle transition-all transform">
               <button 
-                onClick={() => setIsPostStartPopupOpen(false)}
+                onClick={() => setIsPostPropertyStartPopupOpen(false)}
                 className="absolute top-4 right-4 text-white hover:text-[#bc9b54] transition-colors z-10"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

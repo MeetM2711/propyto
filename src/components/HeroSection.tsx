@@ -4,36 +4,25 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Kiran from '../assets/images/kiran-concord-9.jpg'
+import PropertyCard from './PropertyCard';
+import { useProperties } from '@/hooks/useProperties';
 
 const recentSearches = [
   'Buy Commerical in VIP Road Vesu, Surat',
   'All Recent Searches'
 ];
 
-const propertyCards = [
-  {
-    id: 1,
-    image: '/property1.jpg',
-    price: '₹ 22.5 L',
-    title: '2 BHK Flat Residential Apartment',
-    location: 'In Malviya Heights, Jaipur',
-    postedBy: 'Owner',
-    postedTime: '3 months ago'
-  },
-  {
-    id: 2,
-    image: '/property2.jpg',
-    price: '₹ 37.51 L',
-    title: '3 BHK House Independent House',
-    location: 'In Noida',
-    postedBy: 'Owner',
-    postedTime: '3 months ago'
-  },
-  // Add more property cards as needed
-];
-
 const HeroSection = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Use the useProperties hook to fetch featured properties
+  const { properties, loading, error } = useProperties({
+    sortBy: 'date',
+    sortOrder: 'desc'
+  });
+
+  // Take only the first 4 properties for the recommended section
+  const recommendedProperties = properties.slice(0, 4);
 
   return (
     <section className="relative">
@@ -103,41 +92,37 @@ const HeroSection = () => {
             </h2>
           </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="flex justify-center items-center h-48">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#bc9b54]"></div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="text-center py-8">
+              <p className="text-red-500">{error}</p>
+            </div>
+          )}
+
           {/* Property Cards Carousel */}
-          <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4">
-            {propertyCards.map((property) => (
-              <div
-                key={property.id}
-                className="flex-none w-72 bg-white rounded-lg shadow-md overflow-hidden group"
-              >
-                <div className="relative h-48">
-                  <Image
-                    src={property.image}
-                    alt={property.title}
-                    fill
-                    className="object-cover"
-                  />
-                  <button className="absolute top-2 right-2 p-1.5 bg-white/80 rounded-full text-[#bc9b54] hover:text-[#c69531] transition-colors">
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </button>
-                  <div className="absolute bottom-2 left-2 bg-white/80 px-2 py-1 rounded text-sm font-medium text-gray-900">
-                    {property.price}
-                  </div>
+          {!loading && !error && recommendedProperties.length > 0 && (
+            <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4">
+              {recommendedProperties.map((property) => (
+                <div key={property.id} className="flex-none w-72">
+                  <PropertyCard property={property} />
                 </div>
-                <div className="p-4">
-                  <h3 className="font-medium text-gray-900 group-hover:text-[#bc9b54] transition-colors">
-                    {property.title}
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">{property.location}</p>
-                  <div className="mt-2 text-xs text-gray-400">
-                    Posted by {property.postedBy} • {property.postedTime}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && !error && recommendedProperties.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No properties available</p>
+            </div>
+          )}
         </div>
       </div>
     </section>

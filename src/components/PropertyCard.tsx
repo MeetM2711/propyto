@@ -2,13 +2,15 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FaHeart, FaCamera, FaStar } from 'react-icons/fa';
+import { FaHeart, FaCamera } from 'react-icons/fa';
 import { BiArea } from 'react-icons/bi';
-
+import { IoBedOutline } from 'react-icons/io5';
+import { LuBath } from 'react-icons/lu';
 import { BsPeople } from 'react-icons/bs';
+import { MdOutlinePhoneEnabled } from 'react-icons/md';
 
 interface Property {
-  id: number;
+  id: string;
   title: string;
   price: number | 'on_request';
   area: number;
@@ -16,6 +18,7 @@ interface Property {
   areaSqm: number;
   location: string;
   bedrooms: number;
+  bathrooms: number;
   propertyType: string;
   description: string;
   builder: string;
@@ -25,8 +28,8 @@ interface Property {
   carpetArea?: string;
   status?: string;
   contactCount?: number;
-  imageUrl?: string;
-  bathrooms?: number;
+  images: string[];
+  type?: 'Rent' | 'Sell';
 }
 
 interface PropertyCardProps {
@@ -34,32 +37,64 @@ interface PropertyCardProps {
 }
 
 export default function PropertyCard({ property }: PropertyCardProps) {
-  const formatCardPrice = (price: number | 'on_request') => {
-    if (price === 'on_request') return 'Price on Request';
-    if (price >= 10000000) return `₹ ${(price / 10000000).toFixed(1)} Cr`;
-    if (price >= 100000) return `₹ ${(price / 100000).toFixed(1)} Lac`;
-    return `₹ ${price.toLocaleString()}`;
+  const formatCardPrice = (price: number | 'on_request' | undefined) => {
+    if (!price || price === 'on_request') {
+      return 'Price on Request';
+    }
+    
+    if (typeof price !== 'number') {
+      return 'Price on Request';
+    }
+
+    if (price >= 10000000) return `₹${(price / 10000000).toFixed(1)} Cr`;
+    if (price >= 100000) return `₹${(price / 100000).toFixed(1)} Lac`;
+    return `₹${price.toLocaleString()}`;
+  };
+
+  const getPricePerSqft = (price: number | 'on_request', area: number) => {
+    if (typeof price === 'number' && area > 0) {
+      return `₹${Math.round(price / area).toLocaleString()}/sqft`;
+    }
+    return '';
+  };
+
+  const getPropertyPurpose = (type?: 'Rent' | 'Sell') => {
+    if (!type) return '';
+    return type === 'Sell' ? 'for sale' : 'for rent';
   };
 
   return (
     <Link href={`/property/${property.id}`} className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
       <div className="relative">
+        {/* Status Badge */}
         <div className="absolute top-2 left-2 z-10 flex gap-2">
-          {property.featured && (
-            <span className="bg-[#1a1a1a] text-white text-xs px-2 py-1 rounded">FEATURED</span>
-          )}
+          <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full uppercase">
+            {property.status || 'RESALE'}
+          </span>
         </div>
+
+        {/* Favorite Button */}
         <div className="absolute top-2 right-2 z-10">
           <button 
-             onClick={(e) => { e.preventDefault(); console.log('Heart clicked'); }}
-             className="bg-white p-2 rounded-full shadow-md hover:bg-gray-100"
+            onClick={(e) => { e.preventDefault(); console.log('Heart clicked'); }}
+            className="bg-white p-2 rounded-full shadow-md hover:bg-gray-100"
           >
-            <FaHeart className="text-gray-400 hover:text-red-500" />
+            <FaHeart className="text-gray-400 hover:text-[#bc9b54]" />
           </button>
         </div>
+
+        {/* Image Count Badge */}
+        <div className="absolute bottom-2 right-2 z-10">
+          <span className="bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+            <FaCamera />
+            {property.images.length}
+          </span>
+        </div>
+
+        {/* Main Image */}
         <div className="relative h-48">
           <Image
-            src={property.imageUrl || "/placeholder.jpg"}
+            src={property.images[0] || "/placeholder.jpg"}
             alt={property.title}
             fill
             className="object-cover"
@@ -68,61 +103,75 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       </div>
 
       <div className="p-4">
+        {/* Title and Location */}
         <div className="mb-3">
-          <h2 className="text-lg font-semibold mb-1 truncate group-hover:text-[#bc9b54]">{property.title}</h2>
-          <div className="flex items-center gap-2">
-            <p className="text-sm text-gray-600 truncate">
-              {property.bedrooms} BHK {property.propertyType} in {property.location}
-            </p>
-            {property.hasRera && (
-               <span className="flex-shrink-0 text-blue-500 text-xs font-medium border border-blue-500 px-1.5 py-0.5 rounded">
-                 ✓ RERA
-               </span>
-            )}
-          </div>
+          <h2 className="text-lg font-semibold mb-1 text-gray-900">{property.title}</h2>
+          <p className="text-sm text-gray-600">
+            {property.bedrooms} Bedroom {property.propertyType} {getPropertyPurpose(property.type)} in {property.location}
+          </p>
         </div>
 
+        {/* Price and Area Details */}
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="text-base font-semibold">
-               {formatCardPrice(property.price)}
+            <h3 className="text-xl font-bold text-[#bc9b54]">
+              {formatCardPrice(property.price)}
             </h3>
+            {typeof property.price === 'number' && (
+              <p className="text-sm text-gray-500">
+                {getPricePerSqft(property.price, property.area)}
+              </p>
+            )}
           </div>
           <div className="text-right">
-            <div className="flex items-center justify-end gap-1 mb-0.5">
-              <BiArea className="text-gray-500"/>
-              <span className="text-sm font-medium">{property.area} {property.areaUnit}</span>
+            <div className="text-sm font-medium text-gray-900">
+              {property.area} {property.areaUnit}
             </div>
-            {property.carpetArea && (
-              <p className="text-xs text-gray-500">({property.carpetArea} Carpet)</p>
-            )}
+            <p className="text-xs text-gray-500">Plot Area</p>
           </div>
         </div>
 
-         <div className="flex items-center justify-between mb-3">
-             {property.status && (
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                 {property.status}
-                </span>
-             )}
-         </div>
+        {/* Property Features */}
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-1">
+            <IoBedOutline className="text-[#bc9b54]" />
+            <span className="text-sm">{property.bedrooms} BHK</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <LuBath className="text-[#bc9b54]" />
+            <span className="text-sm">{property.bathrooms} Baths</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <BiArea className="text-[#bc9b54]" />
+            <span className="text-sm">{property.area} {property.areaUnit}</span>
+          </div>
+        </div>
+
+        {/* Description */}
         <p className="text-sm text-gray-600 mb-4 line-clamp-2">
           {property.description}
         </p>
 
+        {/* Footer */}
         <div className="flex items-center justify-between pt-3 border-t">
           <div>
-            <p className="text-sm font-medium truncate">{property.builder}</p>
-            <p className="text-xs text-gray-500">Posted {property.postedTime}</p>
+            <p className="text-xs text-gray-500">
+              Posted {property.postedTime} by {property.builder}
+            </p>
+            {property.hasRera && (
+              <span className="inline-block mt-1 text-[#bc9b54] text-xs font-medium border border-[#bc9b54] px-1.5 py-0.5 rounded">
+                ✓ RERA
+              </span>
+            )}
           </div>
+          <button 
+            onClick={(e) => { e.preventDefault(); console.log('Contact clicked'); }}
+            className="flex items-center gap-1 bg-[#bc9b54] text-white px-3 py-1 rounded hover:bg-[#a88847] transition-colors"
+          >
+            <MdOutlinePhoneEnabled />
+            <span className="text-sm">Contact</span>
+          </button>
         </div>
-
-        {property.contactCount && (
-          <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
-            <BsPeople />
-            <span>{property.contactCount} people contacted</span>
-          </div>
-        )}
       </div>
     </Link>
   );
