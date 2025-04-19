@@ -1,0 +1,212 @@
+/* Import Bootstrap and Bootstrap Icons */
+/* @import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css'; */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+:root {
+  --primary-color: #0066cc;
+  --success-color: #4caf50;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  background-color: #000 !important;
+}
+
+
+@layer components {
+  .dropdown-arrow {
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+  }
+
+  .location-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .explore-dropdown-content {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.25rem;
+    background-color: white;
+    color: #1f2937;
+    min-width: 450px;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    z-index: 20;
+  }
+
+  .explore-title {
+    @apply text-lg font-bold text-gray-700 mt-0 mb-4;
+  }
+
+  .explore-tabs {
+    @apply flex mb-4 border-b border-gray-200;
+  }
+
+  .explore-tab {
+    @apply px-4 py-2 text-sm text-gray-600 cursor-pointer relative mr-2;
+  }
+
+  .explore-tab.active {
+    @apply text-blue-600 font-bold;
+  }
+
+  .explore-tab.active::after {
+    @apply content-[''] absolute bottom-[-1px] left-0 w-full h-[3px] bg-blue-600;
+  }
+
+  .explore-search-row {
+    @apply flex items-center bg-gray-50 p-3 rounded-lg mb-4;
+  }
+
+  .residential-dropdown {
+    @apply flex items-center cursor-pointer pr-3 text-gray-700 text-sm;
+  }
+
+  .dropdown-arrow-small {
+    @apply text-xs ml-1;
+  }
+
+  .separator-vertical {
+    @apply w-px h-5 bg-gray-300 mx-3;
+  }
+
+  .search-icon {
+    @apply text-base text-gray-500 mr-2;
+  }
+
+  .city-input {
+    @apply border-none bg-transparent outline-none flex-grow text-sm py-1;
+  }
+
+  .explore-button {
+    @apply bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold ml-3 hover:bg-blue-700;
+  }
+
+  .dropdown-separator {
+    @apply h-px bg-gray-200 my-4;
+  }
+
+  .dropdown-section {
+    @apply px-1;
+  }
+
+  .dropdown-section-title {
+    @apply text-gray-500 text-xs mb-3 mt-0;
+  }
+
+  .dropdown-item {
+    @apply bg-transparent border border-gray-300 rounded-full py-1 px-3 mr-2 mb-2 cursor-pointer text-sm text-gray-700 hover:bg-gray-50;
+  }
+
+  .dropdown-item.active {
+    @apply border-blue-600 text-blue-600 bg-blue-50;
+  }
+
+  .recent-search-item {
+    @apply text-sm text-gray-600 mb-3;
+  }
+
+  .clock-icon {
+    @apply mr-1 text-gray-400;
+  }
+
+  .view-all-link {
+    @apply text-blue-600 no-underline text-sm font-bold hover:text-blue-700;
+  }
+
+  .dropdown-bottom-links {
+    @apply flex items-center justify-between mt-4;
+  }
+
+  .dropdown-link {
+    @apply text-sm text-gray-600 hover:text-blue-600;
+  }
+
+  .international-section {
+    @apply flex flex-col;
+  }
+
+  .powered-by {
+    @apply text-xs text-gray-400 mt-1;
+  }
+
+  .view-top-cities-link {
+    @apply text-sm text-blue-600 font-bold hover:text-blue-700;
+  }
+}
+
+/* Ensure content is not hidden under fixed header */
+body {
+  padding-top: 120px;
+}
+
+@media (max-width: 991px) {
+  body {
+    padding-top: 64px;
+  }
+}
+
+/* Custom styles for the header */
+.navbar-nav .nav-item {
+  transition: color 0.2s ease;
+}
+
+.navbar-nav .nav-item:hover {
+  color: var(--primary-color);
+}
+
+/* Offcanvas styles */
+.offcanvas {
+  max-width: 320px;
+}
+
+/* Custom badge styles */
+.badge.bg-success {
+  background-color: var(--success-color) !important;
+}
+
+/* Custom button styles */
+.btn-outline-primary {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+  background-color: rgba(0, 102, 204, 0.1);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: #0052a3;
+  border-color: #0052a3;
+}
+
+/* Custom icon sizes */
+.bi {
+  font-size: 1.25rem;
+}
+
+/* Smooth transitions */
+.transition-all {
+  transition: all 0.3s ease;
+}

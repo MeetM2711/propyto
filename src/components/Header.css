@@ -1,0 +1,487 @@
+/* General Header Styling */
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background-color: #333; /* Adjust background color to match image */
+  color: white;
+  font-family: sans-serif;
+  font-size: 14px;
+  border-bottom: 1px solid #444; /* Top border line */
+}
+
+/* Left Section */
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+  margin-right: 15px;
+}
+
+.location-dropdown {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative; /* Needed for absolute positioning of dropdown */
+}
+
+.location-dropdown span {
+  margin-right: 5px;
+}
+
+.dropdown-arrow {
+  font-size: 10px;
+  margin-left: 5px;
+}
+
+/* --- NEW Explore Dropdown Styles --- */
+
+/* Renamed trigger class */
+.location-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative; /* Needed for absolute positioning of dropdown */
+}
+
+/* Main dropdown container */
+.explore-dropdown-content {
+  display: block; 
+  position: absolute;
+  top: calc(100% + 5px); /* Position below the trigger with a small gap */
+  left: 0;
+  background-color: white;
+  color: #333;
+  min-width: 450px; /* Adjust width as needed */
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 10; /* Ensure it's above other content */
+  border-radius: 8px;
+  padding: 15px;
+}
+
+/* Title */
+.explore-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #2c3e50; /* Dark blueish color */
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+/* Tabs */
+.explore-tabs {
+  display: flex;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.explore-tab {
+  background: none;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #555;
+  position: relative;
+  margin-right: 10px; /* Space between tabs */
+}
+
+.explore-tab.active {
+  color: #007bff; /* Blue active color */
+  font-weight: bold;
+}
+
+/* Blue underline for active tab */
+.explore-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; /* Align with the container border */
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #007bff;
+}
+
+/* Search Row */
+.explore-search-row {
+  display: flex;
+  align-items: center;
+  background-color: #f8f9fa; /* Light background for the row */
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+}
+
+.residential-dropdown {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding-right: 10px;
+  color: #333;
+  font-size: 14px;
+}
+
+.dropdown-arrow-small {
+  font-size: 8px;
+  margin-left: 5px;
+}
+
+.separator-vertical {
+  width: 1px;
+  height: 20px; /* Adjust height */
+  background-color: #ccc;
+  margin: 0 10px;
+}
+
+.search-icon {
+  font-size: 16px;
+  color: #666;
+  margin-right: 8px;
+}
+
+.city-input {
+  border: none;
+  background: none;
+  outline: none;
+  flex-grow: 1; /* Take remaining space */
+  font-size: 14px;
+  padding: 5px;
+}
+
+.explore-button {
+  background-color: #007bff; /* Blue button */
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.explore-button:hover {
+  background-color: #0056b3;
+}
+
+/* --- Styles for Bottom Sections (adjustments if needed) --- */
+
+.dropdown-separator {
+    height: 1px;
+    background-color: #eee;
+    margin: 15px 0; /* Adjusted margin */
+}
+
+.dropdown-section {
+    padding: 0 5px; /* Adjusted padding */
+}
+
+.dropdown-section-title {
+    color: #666;
+    font-size: 12px;
+    margin-bottom: 10px;
+    margin-top: 0;
+}
+
+/* Keep previous dropdown item styles or adjust as needed */
+.dropdown-item {
+    background-color: transparent;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    padding: 5px 12px; /* Adjusted padding */
+    margin-right: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+}
+
+.dropdown-item:hover {
+    background-color: #f0f0f0;
+}
+
+.dropdown-item.active {
+    border-color: #007bff;
+    color: #007bff;
+    background-color: #e7f3ff;
+}
+
+
+.recent-search-item {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.clock-icon {
+    margin-right: 5px;
+    color: #888;
+}
+
+.view-all-link {
+    color: #007bff;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.view-all-link:hover {
+    text-decoration: underline;
+}
+
+.dropdown-bottom-links {
+    padding: 5px; /* Adjusted padding */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
+}
+
+.dropdown-link {
+    color: #333;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.dropdown-link:hover {
+    color: #007bff;
+}
+
+.international-section {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.powered-by {
+    font-size: 10px;
+    color: #999;
+}
+
+.view-top-cities-link {
+    color: #007bff;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: bold;
+    margin-left: auto; /* Push to the right */
+}
+
+.view-top-cities-link:hover {
+    text-decoration: underline;
+}
+
+
+/* --- End NEW Explore Dropdown Styles --- */
+
+/* Navigation Section */
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* Adjust gap as needed */
+}
+
+.header-nav a {
+  color: white;
+  text-decoration: none;
+  padding: 5px 0;
+  position: relative; /* Needed for badge positioning */
+}
+
+.header-nav a:hover {
+  text-decoration: underline;
+}
+
+.insights .new-badge {
+    position: absolute;
+    top: -8px; /* Adjust position */
+    right: -25px; /* Adjust position */
+    background-color: #d33b8a; /* Pink badge color */
+    color: white;
+    font-size: 10px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+
+/* Right Section */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Adjust gap as needed */
+}
+
+.post-property-btn {
+  background-color: white;
+  color: #333;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.free-badge {
+  background-color: #4CAF50; /* Green color */
+  color: white;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  margin-left: 8px;
+  font-weight: bold;
+}
+
+.icon {
+  font-size: 20px; /* Adjust icon size */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  position: relative; /* For notification badge */
+}
+
+.user-icon {
+    gap: 4px;
+}
+
+.user-icon .notification-badge {
+    position: absolute;
+    top: -3px;
+    right: 3px; /* Adjust position */
+    background-color: red;
+    border-radius: 50%;
+    width: 8px;
+    height: 8px;
+    border: 1px solid white;
+}
+
+/* Placeholder icons - replace with actual icons if available */
+.headset-icon {
+  /* Style for headset icon */
+}
+
+.user-icon {
+  /* Style for user icon */
+}
+
+.menu-icon {
+  /* Style for menu icon */
+  font-size: 24px;
+}
+
+/* Header.css - Styles for 99acres-like responsive header that stays fixed at the top */
+
+/* Fixed header styles */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff;
+  z-index: 50;
+  transition: box-shadow 0.3s ease;
+}
+
+header.scrolled {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Icon styles */
+.nav-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+/* Navigation items */
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 12px;
+  color: #444;
+  text-decoration: none;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.nav-item:hover {
+  color: #0066cc;
+}
+
+/* FREE badge styles */
+.free-badge {
+  background-color: #4caf50;
+  color: white;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  margin-left: 4px;
+}
+
+/* Mobile menu drawer styles */
+.mobile-menu-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+  transition: opacity 0.3s ease;
+}
+
+.mobile-menu-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 80%;
+  max-width: 320px;
+  background-color: white;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.mobile-menu-drawer.open {
+  transform: translateX(0);
+}
+
+/* Custom scrollbar for horizontal navigation */
+.nav-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.nav-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.nav-scroll::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.nav-scroll::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* Ensure content below header is not hidden */
+body {
+  padding-top: 120px; /* Adjust based on your header height */
+}
+
+@media (max-width: 1024px) {
+  body {
+    padding-top: 64px; /* Smaller padding for mobile */
+  }
+} 
